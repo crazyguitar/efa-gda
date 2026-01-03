@@ -12,4 +12,4 @@ clean:
 	rm -rf build/
 
 format:
-	find . -type f -name "*.cu" -o -name "*.h" -o -name "*.cuh"| xargs -I{} clang-format -style=file -i {}
+	find ./src -type f -name "*.cu" -o -name "*.h" -o -name "*.cuh"| xargs -I{} clang-format -style=file -i {}

@@ -5,7 +5,7 @@ file(GLOB src *.cu *.cc "${efa}/*.cpp" "${efa}/*.cu")
 
 add_executable(${target} ${src})
 set_property(TARGET ${target} PROPERTY CUDA_SEPARABLE_COMPILATION ON)
-target_compile_options(${target} PRIVATE -Wall -O3 -g)
+target_compile_options(${target} PRIVATE -Wall -Wno-sign-compare -O3 -g)
 target_include_directories(${target} PRIVATE
   "${PROJECT_SOURCE_DIR}/src/include"
   "${CMAKE_CURRENT_SOURCE_DIR}/include"
@@ -19,6 +19,7 @@ target_link_libraries(${target} PRIVATE
   CUDA::cudart
   CUDA::cuda_driver
   spdlog::spdlog
+  PkgConfig::Fabric
   "${MPI_LIBRARIES}"
   "${HWLOC_LIBRARIES}"
   "${NVML_LIBRARIES}"
