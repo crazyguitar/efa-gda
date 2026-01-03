@@ -18,7 +18,6 @@ target_link_libraries(${target} PRIVATE
   Threads::Threads
   CUDA::cudart
   CUDA::cuda_driver
-  efaxx::efaxx
   spdlog::spdlog
   "${MPI_LIBRARIES}"
   "${HWLOC_LIBRARIES}"

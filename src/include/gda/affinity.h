@@ -7,7 +7,7 @@
 #include <cuda.h>
 #include <cuda_runtime.h>
 #include <hwloc.h>
-#include <io/common.h>
+#include <gda/common.h>
 #include <nvml.h>
 #include <spdlog/spdlog.h>
 #include <string.h>
