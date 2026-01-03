@@ -1,6 +1,7 @@
-file(GLOB src *.cu *.cc)
-set(target gda)
 set(CMAKE_CUDA_ARCHITECTURES 80 90)
+set(target gda)
+set(efa "${PROJECT_SOURCE_DIR}/modules/efa-dp-direct/CUDA/src")
+file(GLOB src *.cu *.cc "${efa}/*.cpp" "${efa}/*.cu")
 
 add_executable(${target} ${src})
 set_property(TARGET ${target} PROPERTY CUDA_SEPARABLE_COMPILATION ON)
@@ -10,6 +11,7 @@ target_include_directories(${target} PRIVATE
   "${CMAKE_CURRENT_SOURCE_DIR}/include"
   "${HWLOC_INCLUDE_DIRS}"
   "${MPI_INCLUDE_PATH}"
+  "${efa}"
   "/opt/gdrcopy/include"
 )
 target_link_libraries(${target} PRIVATE
