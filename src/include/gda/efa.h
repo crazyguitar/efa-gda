@@ -10,7 +10,11 @@
 #include <rdma/fi_cm.h>
 #include <rdma/fi_domain.h>
 #include <rdma/fi_endpoint.h>
+#include <rdma/fi_ext.h>
+#include <rdma/fi_ext_efa.h>
 #include <spdlog/spdlog.h>
+
+#include <utility>
 
 /** @brief Maximum buffer size for endpoint addresses */
 static constexpr size_t kMaxAddrSize = 64;
@@ -244,6 +248,31 @@ class EFA : private NoCopy {
   /** @brief Get libfabric provider info for this EFA */
   [[nodiscard]] const struct fi_info* GetInfo() const noexcept { return efa_; }
 
+  template <typename... Args>
+  int gda_query_addr(Args&&... args) {
+    return gda_ops_->query_addr(std::forward<Args>(args)...);
+  }
+
+  template <typename... Args>
+  int gda_query_qp_wqs(Args&&... args) {
+    return gda_ops_->query_qp_wqs(std::forward<Args>(args)...);
+  }
+
+  template <typename... Args>
+  int gda_query_cq(Args&&... args) {
+    return gda_ops_->query_cq(std::forward<Args>(args)...);
+  }
+
+  template <typename... Args>
+  int gda_cq_open_ext(Args&&... args) {
+    return gda_ops_->cq_open_ext(std::forward<args>...);
+  }
+
+  template <typename... Args>
+  int gda_get_mr_lkey(Args&&... args) {
+    return gda_ops_->get_mr_lkey(std::forward<args>...);
+  }
+
   /**
    * @brief Convert binary address to hex string
    * @param addr Binary address buffer
@@ -309,6 +338,9 @@ class EFA : private NoCopy {
 
     size_t len = sizeof(addr_);
     FI_CHECK(fi_getname(&ep_->fid, addr_, &len));
+
+    // open efa gda ops
+    FI_CHECK(fi_open_ops(&domain_->fid, FI_EFA_GDA_OPS, 0, (void**)&gda_ops_, NULL));
   }
 
  private:
@@ -329,5 +361,6 @@ class EFA : private NoCopy {
   struct fid_ep* ep_ = nullptr;
   struct fid_cq* cq_ = nullptr;
   struct fid_av* av_ = nullptr;
+  struct fi_efa_ops_gda* gda_ops_ = nullptr;
   char addr_[kMaxAddrSize] = {0};
 };
