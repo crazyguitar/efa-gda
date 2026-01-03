@@ -1,0 +1,3 @@
+[submodule "modules/efa-dp-direct"]
+	path = modules/efa-dp-direct
+	url = https://github.com/amzn/efa-dp-direct.git
