@@ -5,6 +5,28 @@
 #pragma once
 #include <spdlog/spdlog.h>
 
+#include <fstream>
+#include <string>
+
+inline bool CheckNvidiaPeerMappingOverride() {
+  std::ifstream f("/sys/module/nvidia/parameters/NVreg_RegistryDwords");
+  if (f) {
+    std::string content;
+    std::getline(f, content);
+    if (content.find("PeerMappingOverride=1") != std::string::npos) {
+      SPDLOG_INFO("PeerMappingOverride=1 (OK)");
+      return true;
+    }
+    SPDLOG_ERROR("NVreg_RegistryDwords='{}' - missing PeerMappingOverride=1", content);
+    SPDLOG_ERROR(
+        "Fix: echo 'options nvidia NVreg_RegistryDwords=\"PeerMappingOverride=1;\"' | sudo tee -a /etc/modprobe.d/nvidia.conf && sudo reboot"
+    );
+    return false;
+  }
+  SPDLOG_WARN("Cannot read NVreg_RegistryDwords - PeerMappingOverride status unknown (may be OK in container)");
+  return true;  // Allow to continue, may work in some environments
+}
+
 #define ASSERT(exp)                                                           \
   do {                                                                        \
     if (!(exp)) {                                                             \

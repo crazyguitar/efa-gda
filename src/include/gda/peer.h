@@ -74,14 +74,23 @@ class Peer : private NoCopy {
       const auto n = std::min(remotes.size(), efas.size());
       fi_addrs[r].resize(n);
       for (size_t i = 0; i < n; ++i) {
-        FI_EXPECT(fi_av_insert(efas[i]->GetAV(), remotes[i].data(), 1, &fi_addrs[r][i], 0, nullptr), 1);
+        SPDLOG_INFO("rank {} inserting addr for peer {} efa {}: {}", rank, r, i, EFA::Addr2Str(remotes[i].data()));
+        int ret = fi_av_insert(efas[i]->GetAV(), remotes[i].data(), 1, &fi_addrs[r][i], 0, nullptr);
+        SPDLOG_INFO("rank {} AV insert peer {} efa {} -> fi_addr={} ret={}", rank, r, i, fi_addrs[r][i], ret);
+        if (ret != 1) {
+          SPDLOG_ERROR("fi_av_insert failed: {}", fi_strerror(-ret));
+        }
       }
     }
+
+    // Sync to ensure all AV inserts are complete
+    MPI_Barrier(MPI_COMM_WORLD);
   }
 
   /** @brief Get GDA QP info for a peer */
-  void QueryPeer(int peer, int efa_idx, uint16_t* ah, uint16_t* qpn, uint32_t* qkey) {
-    efas[efa_idx]->QueryAddr(fi_addrs[peer][efa_idx], ah, qpn, qkey);
+  void QueryPeer(int peer, int efa_idx, uint16_t* ah, uint32_t* qpn, uint32_t* qkey) {
+    int ret = efas[efa_idx]->QueryAddr(fi_addrs[peer][efa_idx], ah, qpn, qkey);
+    SPDLOG_INFO("QueryPeer peer={} efa={} fi_addr={} -> ah={} qpn={} qkey={} ret={}", peer, efa_idx, fi_addrs[peer][efa_idx], *ah, *qpn, *qkey, ret);
   }
 
   /** @brief Create GPU buffer with DMABUF registration */
