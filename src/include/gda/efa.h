@@ -241,7 +241,6 @@ class EFA : private NoCopy {
     CheckNvidiaPeerMappingOverride();
 
     struct fi_av_attr av_attr{};
-    ;
     FI_CHECK(fi_fabric(info->fabric_attr, &fabric_, nullptr));
     FI_CHECK(fi_domain(fabric_, info, &domain_, nullptr));
     FI_CHECK(fi_open_ops(&domain_->fid, FI_EFA_GDA_OPS, 0, (void**)&gda_ops_, nullptr));
