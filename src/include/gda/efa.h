@@ -298,7 +298,7 @@ class EFA : private NoCopy {
 
     struct efa_cuda_cq_attrs cuda_cq_attrs{};
     cuda_cq_attrs.buffer = static_cast<uint8_t*>(cq_buffer);
-    cuda_cq_attrs.num_entries = cq_entries;
+    cuda_cq_attrs.num_entries = cq_ext_attr.num_entries;
     cuda_cq_attrs.entry_size = cq_ext_attr.entry_size;
 
     *gda_cq = efa_cuda_create_cq(&cuda_cq_attrs, sizeof(cuda_cq_attrs));

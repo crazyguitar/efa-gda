@@ -33,6 +33,8 @@
     }                                                                                                            \
   } while (0)
 
+#define LAUNCH_KERNEL(cfg, kernel, ...) CUDA_OK(cudaLaunchKernelEx(cfg, kernel, ##__VA_ARGS__))
+
 /**
  * @brief Base class preventing copy operations
  */
