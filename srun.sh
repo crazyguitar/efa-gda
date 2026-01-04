@@ -2,11 +2,10 @@
 
 set -exo pipefail
 
-DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
-ROOT="${DIR}/../.."
-sqsh="${ROOT}/cuda+latest.sqsh"
+DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
+sqsh="${DIR}/cuda+latest.sqsh"
 mount="/fsx:/fsx"
-binary="${ROOT}/build/src/gda"
+binary="${DIR}/build/src/gda"
 
 srun --container-image "${sqsh}" \
   --container-mounts "${mount}" \

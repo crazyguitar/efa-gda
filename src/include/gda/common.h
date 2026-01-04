@@ -13,6 +13,26 @@
     }                                                                         \
   } while (0)
 
+#define CUDA_OK(exp)                                                                                       \
+  do {                                                                                                     \
+    cudaError_t err = (exp);                                                                               \
+    if (err != cudaSuccess) {                                                                              \
+      SPDLOG_CRITICAL("[{}:{}] " #exp " got CUDA error: {}", __FILE__, __LINE__, cudaGetErrorString(err)); \
+      exit(1);                                                                                             \
+    }                                                                                                      \
+  } while (0)
+
+#define CU_OK(exp)                                                                                               \
+  do {                                                                                                           \
+    CUresult rc = (exp);                                                                                         \
+    if (rc != CUDA_SUCCESS) {                                                                                    \
+      const char* err_str = nullptr;                                                                             \
+      cuGetErrorString(rc, &err_str);                                                                            \
+      SPDLOG_ERROR("{} failed with {} ({})", #exp, static_cast<int>(rc), (err_str ? err_str : "Unknown error")); \
+      exit(1);                                                                                                   \
+    }                                                                                                            \
+  } while (0)
+
 /**
  * @brief Base class preventing copy operations
  */

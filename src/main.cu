@@ -4,6 +4,7 @@
 #include <gda/taskset.h>
 
 #include <iostream>
+#include <memory>
 #include <vector>
 
 int main(int argc, char* argv[]) {
@@ -12,11 +13,11 @@ int main(int argc, char* argv[]) {
   auto rank = mpi.GetWorldRank();
   auto device = mpi.GetLocalRank();
   auto& affinity = loc.GetGPUAffinity()[device];
-  std::vector<EFA> efas;
+  std::vector<std::unique_ptr<EFA>> efas;
 
   Taskset::Set(affinity.cores[device]->logical_index);
   efas.reserve(affinity.efas.size());
-  for (auto e : affinity.efas) efas.emplace_back(EFA(e));
+  for (auto e : affinity.efas) efas.emplace_back(std::make_unique<EFA>(e));
 
   if (rank == 0) {
     std::cout << affinity << std::endl;
