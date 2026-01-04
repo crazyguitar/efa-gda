@@ -202,23 +202,6 @@ class EFA : private NoCopy {
   [[nodiscard]] struct efa_cuda_qp* GetGdaQP() noexcept { return gda_qp_; }
   [[nodiscard]] struct efa_cuda_cq* GetGdaSendCQ() noexcept { return gda_send_cq_; }
   [[nodiscard]] struct efa_cuda_cq* GetGdaRecvCQ() noexcept { return gda_recv_cq_; }
-  [[nodiscard]] void* GetSendCQBuf() noexcept { return send_cq_buf_; }
-  [[nodiscard]] void* GetRecvCQBuf() noexcept { return recv_cq_buf_; }
-
-  // Debug: check CQ buffer from CPU (copy to host and print)
-  void DebugCQFromCPU(const char* name, void* cq_buf, size_t num_entries = 4) {
-    std::vector<uint8_t> host_buf(num_entries * 32);
-    cudaError_t err = cudaMemcpy(host_buf.data(), cq_buf, host_buf.size(), cudaMemcpyDeviceToHost);
-    if (err != cudaSuccess) {
-      SPDLOG_ERROR("DebugCQFromCPU {} cudaMemcpy failed: {}", name, cudaGetErrorString(err));
-      return;
-    }
-    for (size_t i = 0; i < num_entries; ++i) {
-      std::string hex;
-      for (size_t j = 0; j < 32; ++j) hex += fmt::format("{:02x} ", host_buf[i * 32 + j]);
-      SPDLOG_INFO("{} CQE[{}]: {}", name, i, hex);
-    }
-  }
 
   int QueryAddr(fi_addr_t addr, uint16_t* ahn, uint32_t* remote_qpn, uint32_t* remote_qkey) {
     uint16_t qpn16;
@@ -277,11 +260,6 @@ class EFA : private NoCopy {
     size_t len = sizeof(addr_);
     FI_CHECK(fi_getname(&gda_ep_->fid, addr_, &len));
 
-    // Debug: print local address with QPN
-    uint32_t local_qpn = *reinterpret_cast<uint32_t*>(addr_ + 16);
-    uint32_t local_qkey = *reinterpret_cast<uint32_t*>(addr_ + 20);
-    SPDLOG_INFO("Local addr: qpn={} qkey={} full={}", local_qpn, local_qkey, Addr2Str(addr_));
-
     CreateGdaQP();
   }
 
@@ -322,11 +300,6 @@ class EFA : private NoCopy {
     struct fi_efa_cq_attr cq_ext_attr{};
     FI_CHECK(gda_ops_->query_cq(*cq, &cq_ext_attr));
 
-    SPDLOG_INFO(
-        "CQ: requested={} actual_entries={} entry_size={} our_buf={} query_buf={}", cq_entries, cq_ext_attr.num_entries, cq_ext_attr.entry_size,
-        cq_buffer, (void*)cq_ext_attr.buffer
-    );
-
     struct efa_cuda_cq_attrs cuda_cq_attrs{};
     cuda_cq_attrs.buffer = static_cast<uint8_t*>(cq_buffer);
     cuda_cq_attrs.num_entries = cq_ext_attr.num_entries;
@@ -343,12 +316,6 @@ class EFA : private NoCopy {
     struct fi_efa_wq_attr sq_attr{}, rq_attr{};
     FI_CHECK(gda_ops_->query_qp_wqs(gda_ep_, &sq_attr, &rq_attr));
 
-    SPDLOG_INFO(
-        "SQ: buf={} entries={} entry_size={} db={} max_batch={}", (void*)sq_attr.buffer, sq_attr.num_entries, sq_attr.entry_size,
-        (void*)sq_attr.doorbell, sq_attr.max_batch
-    );
-    SPDLOG_INFO("RQ: buf={} entries={} entry_size={} db={}", (void*)rq_attr.buffer, rq_attr.num_entries, rq_attr.entry_size, (void*)rq_attr.doorbell);
-
     sq_host_buf_ = sq_attr.buffer;
     sq_host_db_ = sq_attr.doorbell;
     rq_host_buf_ = rq_attr.buffer;
@@ -357,12 +324,10 @@ class EFA : private NoCopy {
     void* sq_ptr = nullptr;
     CU_OK(cuMemHostRegister(sq_attr.buffer, sq_attr.num_entries * sq_attr.entry_size, CU_MEMHOSTREGISTER_IOMEMORY | CU_MEMHOSTREGISTER_DEVICEMAP));
     CU_OK(cuMemHostGetDevicePointer((CUdeviceptr*)&sq_ptr, sq_attr.buffer, 0));
-    SPDLOG_INFO("SQ: host_buf={} dev_buf={}", (void*)sq_attr.buffer, sq_ptr);
 
     uint32_t* sq_db = nullptr;
     CU_OK(cuMemHostRegister(sq_attr.doorbell, 4, CU_MEMHOSTREGISTER_IOMEMORY | CU_MEMHOSTREGISTER_DEVICEMAP));
     CU_OK(cuMemHostGetDevicePointer((CUdeviceptr*)&sq_db, sq_attr.doorbell, 0));
-    SPDLOG_INFO("SQ: host_db={} dev_db={}", (void*)sq_attr.doorbell, (void*)sq_db);
 
     void* rq_ptr = nullptr;
     CU_OK(cuMemHostRegister(rq_attr.buffer, rq_attr.num_entries * rq_attr.entry_size, CU_MEMHOSTREGISTER_DEVICEMAP));
